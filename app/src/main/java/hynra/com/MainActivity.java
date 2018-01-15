@@ -2,6 +2,7 @@ package hynra.com;
 
 import android.Manifest;
 import android.graphics.Color;
+import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -16,15 +17,17 @@ import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
-import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.annotations.MarkerView;
+import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
-import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 
 
 import java.util.ArrayList;
@@ -35,6 +38,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     MapView mapView;
     private boolean isApprove;
     private MapboxMap mapboxMap;
+    private MarkerView mainMarker;
+    private LatLng position1 = new LatLng(-6.897286, 107.612867);
+    private LatLng position2 = new LatLng(-6.891407, 107.613210);
 
     @Override
     protected void onStart() {
@@ -90,25 +96,48 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
         mapboxMap.getUiSettings().setAllGesturesEnabled(true);
-            mapboxMap.getUiSettings().setLogoEnabled(false);
-            mapboxMap.getUiSettings().setLogoGravity(Gravity.TOP);
-            mapboxMap.getUiSettings().setAttributionGravity(Gravity.TOP);
-            mapboxMap.getUiSettings().setAttributionEnabled(false);
+        mapboxMap.getUiSettings().setLogoEnabled(false);
+        mapboxMap.getUiSettings().setLogoGravity(Gravity.TOP);
+        mapboxMap.getUiSettings().setAttributionGravity(Gravity.TOP);
+        mapboxMap.getUiSettings().setAttributionEnabled(false);
+        mapboxMap.moveCamera(CameraUpdateFactory
+                .newLatLng(position1)
+        );
+        mapboxMap.addPolygon(new PolygonOptions()
+                .addAll(polygonCircleForCoordinate(position1, 500.0))
+                .strokeColor(Color.parseColor("#000000"))
+                .fillColor(Color.parseColor("#55121212")));
 
-            mapboxMap.moveCamera(CameraUpdateFactory
-                    .newLatLng(new LatLng(-6.914744,107.609810))
-            );
-            mapboxMap.addPolygon(new PolygonOptions()
-                    .addAll(polygonCircleForCoordinate(new LatLng(-6.914744,107.609810), 500.0))
-                    .strokeColor(Color.parseColor("#000000"))
-                    .fillColor(Color.parseColor("#55121212")));
+        mainMarker = mapboxMap.addMarker(new MarkerViewOptions()
+                .position(position1)
+                .title("Bandung")
+                .snippet("Bandung")
+        );
 
-            mapboxMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(-6.914744,107.609810))
-                    .title("Bandung")
-                    .snippet("Bandung")
-            );
+        new CountDownTimer(3000, 1000) {
+
+            public void onTick(long millisUntilFinished) {
+
+            }
+
+            public void onFinish() {
+
+
+
+                mainMarker.setRotation((float) MarkerBearing.bearing(
+                        position1.getLatitude(), position1.getLongitude(),
+                        position2.getLatitude(), position2.getLongitude()
+                ));
+                mainMarker.setPosition(position2);
+                mapboxMap.animateCamera(CameraUpdateFactory
+                        .newLatLng(position2)
+                );
+                mapView.invalidate();
+            }
+        }.start();
     }
+
+
 
 
 
@@ -153,7 +182,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
 
                 for (PermissionDeniedResponse response : report.getDeniedPermissionResponses()) {
-                    //Log.i("PERMISSION", "permission denied");
                     isApprove = false;
                     new AlertDialog.Builder(MainActivity.this).setTitle("Persetujuan Dibutuhkan")
                             .setMessage("Aplikasi ini membutuhkan fitur yang memerlukan persetujuan Anda")
@@ -172,7 +200,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
 
                 if(isApprove){
-                    //initMap();
                     mapView.getMapAsync(MainActivity.this);
                 }
             }
