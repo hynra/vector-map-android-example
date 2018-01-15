@@ -16,19 +16,24 @@ import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     MapView mapView;
     private boolean isApprove;
+    private MapboxMap mapboxMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,32 +42,33 @@ public class MainActivity extends AppCompatActivity {
 
         mapView = findViewById(R.id.mapview);
         mapView.onCreate(savedInstanceState);
-        mapView.setStyleUrl("");
+        mapView.setStyleUrl(getResources().getString(R.string.styleUrl));
         checkPermission();
 
     }
 
     private void initMap(){
-        mapView.getMapAsync(mapboxMap -> {
+
+
 
             mapboxMap.getUiSettings().setAllGesturesEnabled(true);
             mapboxMap.getUiSettings().setLogoEnabled(false);
             mapboxMap.getUiSettings().setLogoGravity(Gravity.TOP);
             mapboxMap.getUiSettings().setAttributionGravity(Gravity.TOP);
             mapboxMap.getUiSettings().setAttributionEnabled(false);
-
             mapboxMap.setMyLocationEnabled(true);
-
             mapboxMap.getMyLocation();
-
             mapboxMap.easeCamera(CameraUpdateFactory.newLatLng(new LatLng(-6.914744,107.609810)));
-
-
             mapboxMap.addPolygon(new PolygonOptions()
                     .addAll(polygonCircleForCoordinate(new LatLng(-6.914744,107.609810), 500.0))
                     .strokeColor(Color.parseColor("#000000"))
                     .fillColor(Color.parseColor("#55121212")));
 
+            mapboxMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(-6.914744,107.609810))
+                    .title("Bandung")
+                    .snippet("Bandung")
+            );
 
 
             mapboxMap.setOnMapClickListener(point -> {
@@ -75,10 +81,6 @@ public class MainActivity extends AppCompatActivity {
 
                 mapboxMap.animateCamera(CameraUpdateFactory.newLatLng(point));
             });
-
-
-        });
-
     }
 
 
@@ -143,7 +145,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if(isApprove){
-                    initMap();
+                    //initMap();
+                    mapView.getMapAsync(MainActivity.this);
                 }
             }
 
@@ -172,4 +175,9 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    @Override
+    public void onMapReady(MapboxMap mapboxMap) {
+        this.mapboxMap = mapboxMap;
+        initMap();
+    }
 }
