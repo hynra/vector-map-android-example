@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MarkerView mainMarker;
     private LatLng position1 = new LatLng(-6.897286, 107.612867);
     private LatLng position2 = new LatLng(-6.891407, 107.613210);
+    MarkerAnimation markerAnimation;
 
     @Override
     protected void onStart() {
@@ -86,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView = findViewById(R.id.mapview);
         mapView.onCreate(savedInstanceState);
         mapView.setStyleUrl(getResources().getString(R.string.styleUrl));
+        markerAnimation = new MarkerAnimation();
         checkPermission();
 
     }
@@ -103,10 +105,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapboxMap.moveCamera(CameraUpdateFactory
                 .newLatLng(position1)
         );
-        mapboxMap.addPolygon(new PolygonOptions()
-                .addAll(polygonCircleForCoordinate(position1, 500.0))
-                .strokeColor(Color.parseColor("#000000"))
-                .fillColor(Color.parseColor("#55121212")));
 
         mainMarker = mapboxMap.addMarker(new MarkerViewOptions()
                 .position(position1)
@@ -128,7 +126,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         position1.getLatitude(), position1.getLongitude(),
                         position2.getLatitude(), position2.getLongitude()
                 ));
-                mainMarker.setPosition(position2);
+                //mainMarker.setPosition(position2);
+                markerAnimation.animate(mapView, mainMarker, position2, 1500);
                 mapboxMap.animateCamera(CameraUpdateFactory
                         .newLatLng(position2)
                 );
