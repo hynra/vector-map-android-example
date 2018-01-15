@@ -14,9 +14,9 @@
         android:id="@+id/mapview"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:mapbox_cameraTargetLat="17.4700"
-        app:mapbox_cameraTargetLng="78.4521"
+
         app:mapbox_cameraZoom="15"
+        app:mapbox_cameraTilt="60"
         tools:layout_editor_absoluteY="8dp"
         tools:layout_editor_absoluteX="8dp" />
 

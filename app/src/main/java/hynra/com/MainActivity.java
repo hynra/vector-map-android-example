@@ -66,6 +66,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapView.onDestroy();
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mapView.onSaveInstanceState(outState);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,14 +88,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
 
+
         mapboxMap.getUiSettings().setAllGesturesEnabled(true);
             mapboxMap.getUiSettings().setLogoEnabled(false);
             mapboxMap.getUiSettings().setLogoGravity(Gravity.TOP);
             mapboxMap.getUiSettings().setAttributionGravity(Gravity.TOP);
             mapboxMap.getUiSettings().setAttributionEnabled(false);
-            mapboxMap.setMyLocationEnabled(true);
-            mapboxMap.getMyLocation();
-            mapboxMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(-6.914744,107.609810)));
+
+            mapboxMap.moveCamera(CameraUpdateFactory
+                    .newLatLng(new LatLng(-6.914744,107.609810))
+            );
             mapboxMap.addPolygon(new PolygonOptions()
                     .addAll(polygonCircleForCoordinate(new LatLng(-6.914744,107.609810), 500.0))
                     .strokeColor(Color.parseColor("#000000"))
@@ -101,18 +108,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .title("Bandung")
                     .snippet("Bandung")
             );
-
-
-            mapboxMap.setOnMapClickListener(point -> {
-
-
-                Log.i("test",
-                        "Lat : " + String.valueOf(point.getLatitude())
-                                + "\nLon : " + String.valueOf(point.getLongitude())
-                );
-
-                mapboxMap.animateCamera(CameraUpdateFactory.newLatLng(point));
-            });
     }
 
 
