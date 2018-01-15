@@ -19,6 +19,7 @@ import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.PolygonOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
@@ -36,6 +37,37 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MapboxMap mapboxMap;
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        mapView.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mapView.onStop();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
+    }
+
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -51,14 +83,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
 
-            mapboxMap.getUiSettings().setAllGesturesEnabled(true);
+        mapboxMap.getUiSettings().setAllGesturesEnabled(true);
             mapboxMap.getUiSettings().setLogoEnabled(false);
             mapboxMap.getUiSettings().setLogoGravity(Gravity.TOP);
             mapboxMap.getUiSettings().setAttributionGravity(Gravity.TOP);
             mapboxMap.getUiSettings().setAttributionEnabled(false);
             mapboxMap.setMyLocationEnabled(true);
             mapboxMap.getMyLocation();
-            mapboxMap.easeCamera(CameraUpdateFactory.newLatLng(new LatLng(-6.914744,107.609810)));
+            mapboxMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(-6.914744,107.609810)));
             mapboxMap.addPolygon(new PolygonOptions()
                     .addAll(polygonCircleForCoordinate(new LatLng(-6.914744,107.609810), 500.0))
                     .strokeColor(Color.parseColor("#000000"))
