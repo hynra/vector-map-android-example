@@ -1,6 +1,9 @@
 package hynra.com;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
+import android.animation.TypeEvaluator;
+import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
@@ -9,7 +12,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.animation.LinearInterpolator;
 
+import com.androidnetworking.AndroidNetworking;
+import com.androidnetworking.common.Priority;
+import com.androidnetworking.error.ANError;
+import com.androidnetworking.interfaces.JSONObjectRequestListener;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -17,6 +25,8 @@ import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.MarkerView;
@@ -30,7 +40,11 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
@@ -41,7 +55,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MarkerView mainMarker;
     private LatLng position1 = new LatLng(-6.897286, 107.612867);
     private LatLng position2 = new LatLng(-6.891407, 107.613210);
+    private int count = 0;
     MarkerAnimation markerAnimation;
+
 
     @Override
     protected void onStart() {
@@ -84,10 +100,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        markerAnimation = new MarkerAnimation();
         mapView = findViewById(R.id.mapview);
         mapView.onCreate(savedInstanceState);
         mapView.setStyleUrl(getResources().getString(R.string.styleUrl));
-        markerAnimation = new MarkerAnimation();
         checkPermission();
 
     }
@@ -106,59 +122,32 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .newLatLng(position1)
         );
 
+        Icon icon = IconFactory.getInstance(this).fromResource(R.mipmap.bike);
         mainMarker = mapboxMap.addMarker(new MarkerViewOptions()
                 .position(position1)
-                .title("Bandung")
-                .snippet("Bandung")
+                .icon(icon)
         );
 
-        new CountDownTimer(3000, 1000) {
-
-            public void onTick(long millisUntilFinished) {
-
-            }
-
-            public void onFinish() {
-
-
-
-                mainMarker.setRotation((float) MarkerBearing.bearing(
-                        position1.getLatitude(), position1.getLongitude(),
-                        position2.getLatitude(), position2.getLongitude()
-                ));
-                //mainMarker.setPosition(position2);
-                markerAnimation.animate(mapView, mainMarker, position2, 1500);
-                mapboxMap.animateCamera(CameraUpdateFactory
-                        .newLatLng(position2)
-                );
-                mapView.invalidate();
-            }
-        }.start();
+        startHttpReceive();
     }
 
 
 
 
 
-    private ArrayList<LatLng> polygonCircleForCoordinate(LatLng location, double radius){
-        int degreesBetweenPoints = 8; //45 sides
-        int numberOfPoints = (int) Math.floor(360 / degreesBetweenPoints);
-        double distRadians = radius / 6371000.0; // earth radius in meters
-        double centerLatRadians = location.getLatitude() * Math.PI / 180;
-        double centerLonRadians = location.getLongitude() * Math.PI / 180;
-        ArrayList<LatLng> polygons = new ArrayList<>(); //array to hold all the points
-        for (int index = 0; index < numberOfPoints; index++) {
-            double degrees = index * degreesBetweenPoints;
-            double degreeRadians = degrees * Math.PI / 180;
-            double pointLatRadians = Math.asin(Math.sin(centerLatRadians) * Math.cos(distRadians) + Math.cos(centerLatRadians) * Math.sin(distRadians) * Math.cos(degreeRadians));
-            double pointLonRadians = centerLonRadians + Math.atan2(Math.sin(degreeRadians) * Math.sin(distRadians) * Math.cos(centerLatRadians),
-                    Math.cos(distRadians) - Math.sin(centerLatRadians) * Math.sin(pointLatRadians));
-            double pointLat = pointLatRadians * 180 / Math.PI;
-            double pointLon = pointLonRadians * 180 / Math.PI;
-            LatLng point = new LatLng(pointLat, pointLon);
-            polygons.add(point);
+    private static class LatLngEvaluator implements TypeEvaluator<LatLng> {
+
+
+        private LatLng latLng = new LatLng();
+
+        @Override
+        public LatLng evaluate(float fraction, LatLng startValue, LatLng endValue) {
+            latLng.setLatitude(startValue.getLatitude()
+                    + ((endValue.getLatitude() - startValue.getLatitude()) * fraction));
+            latLng.setLongitude(startValue.getLongitude()
+                    + ((endValue.getLongitude() - startValue.getLongitude()) * fraction));
+            return latLng;
         }
-        return polygons;
     }
 
 
@@ -233,4 +222,64 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         this.mapboxMap = mapboxMap;
         initMap();
     }
+
+
+
+
+    private void startHttpReceive() {
+        final int total = 67;
+
+        new CountDownTimer(60000, 1000) {
+
+            public void onTick(long millisUntilFinished) {
+                if(count == total){
+                    count = 0;
+                }else count += 1;
+                AndroidNetworking.post("http://167.205.7.226:33302/receive")
+                        .setTag("test")
+                        .setPriority(Priority.MEDIUM)
+                        .addBodyParameter("counter", ""+count)
+                        .build()
+                        .getAsJSONObject(new JSONObjectRequestListener() {
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                try {
+                                  //  Log.i("test", response.toString());
+                                    position2.setLatitude(response.getJSONObject("resp").getDouble("Latitude"));
+                                    position2.setLongitude(response.getJSONObject("resp").getDouble("Longitude"));
+                                    mainMarker.setRotation((float) MarkerBearing.bearing(
+                                            mainMarker.getPosition().getLatitude(), mainMarker.getPosition().getLongitude(),
+                                            position2.getLatitude(), position2.getLongitude()
+                                    ));
+
+                                    /*ValueAnimator markerAnimator = ObjectAnimator.ofObject(mainMarker, "position",
+                                            new LatLngEvaluator(), mainMarker.getPosition(), position2);
+                                    markerAnimator.setDuration(1000);
+                                    markerAnimator.setInterpolator(new LinearInterpolator());
+                                    markerAnimator.start();
+                                    mapView.invalidate();*/
+                                    markerAnimation.animate(mapView, mainMarker, position2, 1000);
+                                    mapboxMap.animateCamera(CameraUpdateFactory
+                                            .newLatLng(position2)
+                                    );
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                            @Override
+                            public void onError(ANError error) {
+                                Log.i("test", error.getErrorDetail());
+                            }
+                        });
+            }
+
+            public void onFinish() {
+
+            }
+        }.start();
+    }
+
+
+
 }

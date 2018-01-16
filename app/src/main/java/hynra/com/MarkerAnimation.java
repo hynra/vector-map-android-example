@@ -1,6 +1,5 @@
 package hynra.com;
 
-
 import android.animation.ObjectAnimator;
 import android.animation.TypeEvaluator;
 import android.util.Property;

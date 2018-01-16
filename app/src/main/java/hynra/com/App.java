@@ -5,6 +5,7 @@ import android.content.Context;
 import android.support.multidex.MultiDex;
 import android.support.multidex.MultiDexApplication;
 
+import com.androidnetworking.AndroidNetworking;
 import com.mapbox.mapboxsdk.Mapbox;
 
 public class App extends MultiDexApplication {
@@ -27,6 +28,7 @@ public class App extends MultiDexApplication {
 
         super.onCreate();
 
+        AndroidNetworking.initialize(this);
         Mapbox.getInstance(this,getString(R.string.fake_key));
 
 
